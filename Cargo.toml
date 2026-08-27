@@ -1,0 +1,25 @@
+[package]
+name = "twig"
+version = "0.1.0"
+edition = "2021"
+description = "One worktree per branch, one CLion window per worktree"
+license = "proprietary"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+sha1 = "0.10"
+png = "0.17"
+
+[dev-dependencies]
+tempfile = "3"
+
+# Small, optimized single binary (matches the wessh release profile).
+[profile.release]
+opt-level = "z"
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
