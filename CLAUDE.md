@@ -13,15 +13,19 @@ about working on the code.
   nothing else (no env vars, no global config, no git aliases) decides the root.
   All tunables live in that file and are set via `twig init` options.
 - **stdout contract.** Commands that land the user somewhere (`twig <branch>`,
-  `open`, `exit`, `remove` of the current worktree, `prune`) print exactly one
+  `open`, `exit`, `remove` of the current worktree, `prune`, `list -i`) print exactly one
   line on stdout — the path to cd into — and everything else on stderr via
   `out::say` (terminal mode). Git passthrough output is redirected too
   (`git::passthrough`). With `-o`/`--open` nothing is printed on stdout and the
   path is opened in the configured IDE (`launcher::open_in_ide`, `config.ide`). The zsh wrapper (`shell/twig.zsh`, emitted by `twig shell zsh`)
   relies on this. `TWIG_SHELL=1` is set by the wrapper so the binary can warn
   when it's missing.
+- **Terminal raw mode goes through the `libc` crate** (`menu.rs`: termios, poll,
+  TIOCGWINSZ), never `stty`. The menu is drawn on stderr and erased again; when
+  stdin isn't a tty keys are read as plain bytes, which is how the e2e tests script it.
 - **No network unless asked.** `list -l`/`prune` judge "gone" from the local
-  `[gone]` tracking state; only `prune -q` runs `ls-remote`.
+  `[gone]` tracking state; only `prune -q` runs `ls-remote`. Status probes run
+  in parallel (`Status::probe_all`) and never recurse into submodules.
 - **Colour goes through `out::{green,yellow,red,bold,dim,cyan}`**, gated by
   `--color` (global clap arg, `out::set_color`); `auto` checks isatty of the
   stream `say` writes to, so wrapper-captured output stays plain.
@@ -40,7 +44,8 @@ about working on the code.
 src/main.rs      dispatch            src/root.rs    Root, Worktree, discovery, layout
 src/cli.rs       clap definitions    src/config.rs  .twig.toml schema
 src/init.rs      init + status       src/add.rs     twig <branch>
-src/list.rs      twig list           src/open.rs    open + exit
+src/list.rs      twig list (-r, -i)  src/open.rs    open + exit
+src/menu.rs      arrow-key menu for list -i (raw mode, key decoding, redraw)
 src/remove.rs    remove + detached worker (__bg-remove)
 src/prune.rs     prune (interactive) src/shell.rs   shell snippet + __complete
 src/status.rs    per-worktree dirty/unpushed/never-pushed/gone (list -l, prune)

@@ -4,7 +4,7 @@ use crate::cli::PruneArgs;
 use crate::error::Result;
 use crate::remove::Remover;
 use crate::root::{name_of, Root, Worktree};
-use crate::status::Status;
+use crate::status::{Job, Status};
 use crate::{git, list, out};
 use std::collections::{HashMap, HashSet};
 use std::io::{BufRead, Write};
@@ -28,7 +28,7 @@ pub fn run(args: PruneArgs, open: bool) -> Result<()> {
     let remover = Remover::new(root.clone(), open);
 
     let mut remote_heads: HashMap<PathBuf, Option<HashSet<String>>> = HashMap::new();
-    let mut candidates = Vec::new();
+    let mut pending: Vec<(Worktree, String, PathBuf)> = Vec::new();
     for wt in all.into_iter().filter(|w| repo_filter.as_deref().is_none_or(|r| w.repo == r)) {
         let label = wt.label();
         let Some(branch) = wt.branch() else {
@@ -39,15 +39,16 @@ pub fn run(args: PruneArgs, open: bool) -> Result<()> {
             out::warn(format!("note: skipping {label} (cannot resolve parent repo)"));
             continue;
         };
-        let heads = if args.query {
-            match remote_heads.entry(parent.clone()).or_insert_with(|| query_origin(&parent)) {
-                Some(h) => Some(&*h),
-                None => continue,
-            }
-        } else {
-            None
-        };
-        let status = Status::probe(&wt, &branch, heads);
+        if args.query && remote_heads.entry(parent.clone()).or_insert_with(|| query_origin(&parent)).is_none() {
+            continue;
+        }
+        pending.push((wt, branch, parent));
+    }
+    let jobs: Vec<Job> = pending.iter().map(|(wt, branch, parent)| (wt.path.as_path(), branch.as_str(), remote_heads.get(parent).and_then(Option::as_ref))).collect();
+    let statuses = Status::probe_all(&jobs);
+
+    let mut candidates = Vec::new();
+    for ((wt, branch, _), status) in pending.into_iter().zip(statuses) {
         if !(status.gone || status.never_pushed) || (args.skip_local && status.never_pushed) {
             continue;
         }

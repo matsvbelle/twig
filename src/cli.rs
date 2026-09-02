@@ -51,14 +51,7 @@ pub enum Cmd {
     /// Show whether twig is active here and what it manages
     Status,
     /// Tree of this repo's worktrees; the one you're in is marked
-    List {
-        /// Every repo under the twigged directory
-        #[arg(short = 'A', long)]
-        all: bool,
-        /// Show each worktree's state: dirty, unpushed commits, never pushed, upstream gone (no network)
-        #[arg(short = 'l', long)]
-        long: bool,
-    },
+    List(ListArgs),
     /// cd into a repo under the twigged directory (no name: list repos)
     Open {
         /// Repo: top-level name, root-relative path (e.g. `libs/core`), unique basename or substring
@@ -113,6 +106,22 @@ pub struct InitArgs {
     /// Tint colour lightness (0..1)
     #[arg(long)]
     pub lightness: Option<f64>,
+}
+
+#[derive(Args, Debug)]
+pub struct ListArgs {
+    /// Every repo under the twigged directory
+    #[arg(short = 'A', long)]
+    pub all: bool,
+    /// Show each worktree's state: dirty, unpushed commits, never pushed, upstream gone (no network)
+    #[arg(short = 'l', long)]
+    pub long: bool,
+    /// Also list the main repos, with the worktrees folder nested below them
+    #[arg(short = 'r', long)]
+    pub root_repos: bool,
+    /// Menu: arrows move, Enter/Space cd's into the highlighted checkout (-o: opens it), n creates a worktree from it, r/d/Del removes it, q/Esc quits
+    #[arg(short = 'i', long)]
+    pub interactive_switch: bool,
 }
 
 #[derive(Args, Debug)]

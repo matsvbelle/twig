@@ -12,34 +12,39 @@ pub fn run(branch: &str, base: Option<&str>, open: bool) -> Result<()> {
     out::set_terminal_mode();
     let root = Root::discover()?;
     let main = root.main_repo_at(&std::env::current_dir()?)?;
-    let path = root.worktree_path(branch, &root.repo_name(&main));
+    create(&root, &main, branch, base, open)
+}
+
+/// Create (or switch to) `main`'s worktree for `branch`, then land there.
+pub fn create(root: &Root, main: &Path, branch: &str, base: Option<&str>, open: bool) -> Result<()> {
+    let path = root.worktree_path(branch, &root.repo_name(main));
 
     if path.exists() {
         out::say(format!("Worktree already exists: {}", path.display()));
-        land(&root, &path, open);
+        land(root, &path, open);
         return Ok(());
     }
 
-    checkout(&main, branch, base.unwrap_or("HEAD"), &path)?;
+    checkout(main, branch, base.unwrap_or("HEAD"), &path)?;
 
-    if idea::setup(&main, &path)? {
+    if idea::setup(main, &path)? {
         if let Some(t) = &root.config.tint {
             if let Err(e) = tint::apply(&path, branch, t) {
                 out::warn(format!("  (background tint skipped: {e})"));
             }
         }
-        if let Err(e) = color::apply(&main, &root.repos(), Some(&path)) {
+        if let Err(e) = color::apply(main, &root.repos(), Some(&path)) {
             out::warn(format!("  (project color skipped: {e})"));
         }
         out::say("Set up .idea (shared config symlinked; build/state copied)");
     }
-    link_shared(&main, &path)?;
-    init_submodules(&main, &path)?;
-    hook::install_branch_pin(&main)?;
+    link_shared(main, &path)?;
+    init_submodules(main, &path)?;
+    hook::install_branch_pin(main)?;
 
     out::say("");
     out::say(format!("{} {}", out::green("Worktree ready:"), path.display()));
-    land(&root, &path, open);
+    land(root, &path, open);
     Ok(())
 }
 

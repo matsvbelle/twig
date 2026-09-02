@@ -13,7 +13,7 @@ pub fn set_color(mode: Color) {
 }
 
 /// `auto` looks at the stream `say` writes to, so wrapper-captured stdout stays plain.
-fn color_enabled() -> bool {
+pub fn color_enabled() -> bool {
     match COLOR.load(Ordering::Relaxed) {
         x if x == Color::Always as u8 => true,
         x if x == Color::Auto as u8 => {

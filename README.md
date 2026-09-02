@@ -3,6 +3,8 @@
 One worktree per branch, one IDE window per worktree — as a single Rust binary
 with no runtime dependencies.
 
+![twig demo](twig-demo.gif)
+
 ## Layout
 
 ```
@@ -63,7 +65,7 @@ Like `-o`, it may go before or after the command.
 | Command | |
 |---|---|
 | `twig <branch> [base] [-o]` | create the worktree (local branch → checkout; on origin → tracking; else new from `base`, default HEAD) and cd into it; if it exists, just go there |
-| `twig list [-A] [-l]` | tree of this repo's worktrees, the current one marked (`-A`: all repos; `-l`: dirty / unpushed / never pushed / upstream gone) |
+| `twig list [-A] [-l] [-r] [-i] [-o]` | tree of this repo's worktrees, the current one marked (`-A`: all repos; `-l`: dirty / unpushed / never pushed / upstream gone; `-r`: the main repos too, with the worktrees folder nested below them; `-i`: menu — ↑/↓ move, Enter/Space cd's into the highlighted checkout (`-o`: opens it), `n` creates a worktree branched from it, `r`/`d`/Del removes it after confirming, `q`/Esc quits) |
 | `twig exit [-o]` | cd to the main repo |
 | `twig remove [-o]` | remove the worktree you're in and land in its main repo (`-o`: detached; the IDE switches to main) |
 | `twig remove <path>` / `<branch> [repo]` / `-l` | remove others / list |

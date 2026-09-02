@@ -9,6 +9,7 @@ mod idea;
 mod init;
 mod launcher;
 mod list;
+mod menu;
 mod open;
 mod out;
 mod prune;
@@ -47,7 +48,7 @@ fn run(cli: Cli) -> Result<()> {
         Some(Cmd::Branch(words)) => add::run(&words[0], words.get(1).map(String::as_str), g.open),
         Some(Cmd::Init(args)) => init::run(args),
         Some(Cmd::Status) => init::status(),
-        Some(Cmd::List { all, long }) => list::run(all, long),
+        Some(Cmd::List(args)) => list::run(args, g.open),
         Some(Cmd::Open { name }) => open::run(name.as_deref(), g.open),
         Some(Cmd::Exit {}) => open::exit(g.open),
         Some(Cmd::Remove { target, repo, list }) => remove::run(target.as_deref(), repo.as_deref(), list, g.open),

@@ -278,7 +278,8 @@ fn completion_and_shell_snippet() {
     assert_eq!(f.ok(&repo, &["__complete", "worktrees"]).trim(), "b1");
     let branches = f.ok(&repo, &["__complete", "branches"]);
     assert!(branches.contains("main") && branches.contains("b1") && !branches.contains("HEAD"));
-    assert!(f.ok(&f.root, &["shell", "zsh"]).contains("compdef _twig twig"));
+    let snippet = f.ok(&f.root, &["shell", "zsh"]);
+    assert!(snippet.contains("compdef _twig twig") && snippet.contains("__twig_list_switches"), "{snippet}");
     assert!(f.fail(&f.root, &["shell", "fish"]).contains("unsupported"));
 }
 
@@ -361,6 +362,13 @@ fn submodules_seeded_from_main_repo() {
     assert!(wt.join("libs/lib/README").is_file());
     let status = git(&wt, &["submodule", "status"]);
     assert!(!status.starts_with('-') && !status.starts_with('+'), "submodule not checked out: {status}");
+
+    // -l: a modified file inside a submodule is not "dirty"; a moved submodule pointer is.
+    let sub = wt.join("libs/lib");
+    fs::write(sub.join("README"), "edited").unwrap();
+    assert!(!f.ok(&wt, &["list", "-l"]).contains("[dirty]"));
+    git(&sub, &["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qam", "bump"]);
+    assert!(f.ok(&wt, &["list", "-l"]).contains("[sm] ← here [dirty]"));
     drop(lib);
 }
 
@@ -562,6 +570,8 @@ fn open_current_checkout_and_help_everywhere() {
     }
     let help = f.ok(&f.root, &["open", "--help"]);
     assert!(help.contains("[NAME]  Repo:"), "{help}");
+    let help = f.ok(&f.root, &["list", "--help"]);
+    assert!(help.contains("-r, --root-repos") && help.contains("-i, --interactive-switch"), "{help}");
 }
 
 #[test]
@@ -649,4 +659,65 @@ fn nested_repos_mirror_layout_and_shadowing() {
     f.ok(&only, &["c"]);
     f.ok(&f.root, &["remove", "c"]);
     assert!(!f.root.join(".WORKTREES/c").exists());
+}
+
+#[test]
+fn list_root_repos_and_interactive_switch() {
+    let f = Fixture::new();
+    let a = f.repo("a");
+    let b = f.repo("b");
+    f.init();
+    f.ok(&a, &["one"]);
+    f.ok(&a, &["two"]);
+    f.ok(&b, &["x"]);
+    let two = f.wt("two", "a");
+    git(&two, &["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", "ahead"]);
+
+    // -r: the main repos, with the worktrees folder nested below; -l adds their branch.
+    let r = f.ok(&a, &["list", "-r"]);
+    let tree = format!("Projects  (repo: a)\n\u{251c}\u{2500}\u{2500} {:<26} [main] \u{2190} here\n\u{2514}\u{2500}\u{2500} .WORKTREES/\n    \u{251c}\u{2500}\u{2500} one/\n    \u{2502}   \u{2514}\u{2500}\u{2500} {:<18} [one]\n", "a", "a");
+    assert!(r.contains(&tree) && !r.contains("x/"), "{r}");
+    let rl = f.ok(&f.root, &["list", "-A", "-r", "-l"]);
+    let roots = format!("\u{251c}\u{2500}\u{2500} {:<26} [main]\n\u{251c}\u{2500}\u{2500} {:<26} [main]\n\u{2514}\u{2500}\u{2500} .WORKTREES/\n", "a", "b");
+    assert!(rl.contains(&roots) && rl.contains(&format!("        \u{2514}\u{2500}\u{2500} {:<18} [x] [never pushed]\n", "b")) && !rl.contains("here"), "{rl}");
+
+    // -i: arrows move, Enter/Space print the highlighted path (and nothing else) on stdout.
+    let (ok, out, all) = f.interactive(&a, &["list", "-i"], "\x1b[B\r");
+    assert!(ok && out.trim() == two.to_str().unwrap(), "{all}");
+    assert!(all.contains("> ") && all.contains("\u{2192} two/a"), "{all}");
+    let (ok, out, _) = f.interactive(&two, &["list", "-i"], "\r");
+    assert!(ok && out.trim() == two.to_str().unwrap(), "starts on the checkout we're in");
+    let (ok, out, _) = f.interactive(&a, &["list", "-i", "-r"], " ");
+    assert!(ok && out.trim() == a.to_str().unwrap(), "main repo rows are selectable");
+    for input in ["q", "\x1b", "", "\x03", "nabc\x1bq"] {
+        let (ok, out, all) = f.interactive(&a, &["list", "-i"], input);
+        assert!(ok && out.is_empty(), "{input:?}: {all}");
+    }
+    assert!(!f.wt("abc", "a").exists());
+    let (ok, out, _) = f.interactive(&a, &["list", "-i", "-o"], "\r");
+    assert!(ok && out.is_empty());
+    assert!(f.wait_clion(f.wt("one", "a").to_str().unwrap()));
+
+    // n: a new worktree branched from the highlighted checkout (Backspace edits the name).
+    let (ok, out, all) = f.interactive(&a, &["list", "-i"], "jnfeatX\x7f\r");
+    let feat = f.wt("feat", "a");
+    assert!(ok && out.trim() == feat.to_str().unwrap(), "{all}");
+    assert!(all.contains("Creating new branch 'feat' from two"), "{all}");
+    assert_eq!(git(&feat, &["rev-parse", "HEAD"]), git(&two, &["rev-parse", "HEAD"]));
+    let (ok, out, all) = f.interactive(&f.root, &["list", "-A", "-r", "-i"], "\x1b[Bnfrom-b\r");
+    assert!(ok && out.trim() == f.wt("from-b", "b").to_str().unwrap(), "{all}");
+    assert!(all.contains("Creating new branch 'from-b' from main") && f.wt("from-b", "b").join(".git").exists(), "{all}");
+
+    // r / d / Delete ask first; y removes the worktree and the menu comes back; main repos can't be removed.
+    fs::write(feat.join("junk"), "x").unwrap();
+    let (ok, out, all) = f.interactive(&a, &["list", "-i"], "dn\x1b[3~q");
+    assert!(ok && out.is_empty() && feat.is_dir(), "{all}");
+    assert!(all.contains("Remove worktree feat/a [dirty]") && all.matches("[y/N]").count() == 2, "{all}");
+    let (ok, out, all) = f.interactive(&a, &["list", "-i", "-r"], "d\r");
+    assert!(ok && out.trim() == a.to_str().unwrap() && !all.contains("[y/N]"), "{all}");
+    let (ok, out, all) = f.interactive(&a, &["list", "-i"], "ry\r");
+    assert!(ok && !feat.exists() && out.trim() == f.wt("one", "a").to_str().unwrap(), "next row is highlighted after removal: {all}");
+    let (ok, out, all) = f.interactive(&two, &["list", "-i"], "ry");
+    assert!(ok && !two.exists() && out.trim() == a.to_str().unwrap(), "removing the current worktree lands in main: {all}");
+    assert!(all.contains("(you'll land in the main repo)"), "{all}");
 }
