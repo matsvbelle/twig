@@ -1,7 +1,7 @@
 //! `twig open` / `twig exit`.
 use crate::error::Result;
-use crate::root::Root;
-use crate::{add, bail, git, out};
+use crate::model::root::Root;
+use crate::{bail, cmd::add, git, term::out};
 use std::path::Path;
 
 pub fn run(name: Option<&str>, open: bool) -> Result<()> {

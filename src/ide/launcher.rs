@@ -1,5 +1,5 @@
 //! Opening a directory in the configured IDE, detached from this process.
-use crate::out;
+use crate::term::out;
 use std::path::Path;
 use std::process::{Command, Stdio};
 

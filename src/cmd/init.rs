@@ -1,9 +1,9 @@
 //! `twig init` / `twig status`.
 use crate::cli::InitArgs;
-use crate::config::{Config, Tint, CONFIG_FILE};
+use crate::model::config::{Config, Tint, CONFIG_FILE};
 use crate::error::Result;
-use crate::root::{find_config, Root, INACTIVE_MSG};
-use crate::{bail, git, out};
+use crate::model::root::{find_config, Root, INACTIVE_MSG};
+use crate::{bail, git, term::out};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -24,7 +24,7 @@ pub fn run(args: InitArgs) -> Result<()> {
 
     let config = Config {
         worktrees: args.name.clone(),
-        ide: args.ide.clone().unwrap_or_else(|| crate::config::DEFAULT_IDE.to_string()),
+        ide: args.ide.clone().unwrap_or_else(|| crate::model::config::DEFAULT_IDE.to_string()),
         tint: tint_from(&args, Tint::default()),
     };
     let root = Root { dir: cwd.clone(), config };

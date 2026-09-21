@@ -1,4 +1,5 @@
-use clap::{Args, Parser, Subcommand, ValueEnum};
+use clap::{Args, Parser, Subcommand};
+use crate::term::out::Color;
 
 /// One worktree per branch, one IDE window per worktree.
 #[derive(Parser, Debug)]
@@ -33,15 +34,6 @@ pub struct BranchArgs {
     pub base: Option<String>,
     #[command(flatten)]
     pub globals: Globals,
-}
-
-#[derive(ValueEnum, Clone, Copy, Debug, PartialEq)]
-pub enum Color {
-    Auto,
-    Always,
-    Never,
-    #[value(alias = "none", hide = true)]
-    None,
 }
 
 #[derive(Subcommand, Debug)]
@@ -89,7 +81,7 @@ pub enum Cmd {
 #[derive(Args, Debug)]
 pub struct InitArgs {
     /// Name of the worktrees folder
-    #[arg(default_value = crate::config::DEFAULT_WORKTREES)]
+    #[arg(default_value = crate::model::config::DEFAULT_WORKTREES)]
     pub name: String,
     /// IDE launcher command used by -o (e.g. `clion`, `idea`, `code`)
     #[arg(long)]

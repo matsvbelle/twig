@@ -1,7 +1,7 @@
 //! `twig <branch> [base]`: create a worktree for the branch, or switch to it.
 use crate::error::Result;
-use crate::root::Root;
-use crate::{color, git, hook, idea, launcher, out, tint};
+use crate::model::root::Root;
+use crate::{git, git::hook, ide::color, ide::idea, ide::launcher, ide::tint, term::out};
 use std::path::Path;
 use std::process::Command;
 

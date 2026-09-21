@@ -1,6 +1,6 @@
 //! Arrow-key menu for `twig list -i`: drawn on stderr in raw mode, erased again
 //! once a choice is made, so stdout stays free for the path the caller prints.
-use crate::out;
+use crate::term::out;
 use std::io::{IsTerminal, Write};
 
 /// One menu line; `item` is set on selectable rows.

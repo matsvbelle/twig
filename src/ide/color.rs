@@ -1,8 +1,8 @@
 //! CLion project colour (the coloured circle / toolbar tint) as a REPO identity:
 //! initialised once in the main repo, mirrored verbatim into every worktree.
 use crate::error::Result;
-use crate::root::name_of;
-use crate::{idea, out};
+use crate::model::root::name_of;
+use crate::{ide::idea, term::out};
 use sha1::{Digest, Sha1};
 use std::collections::HashSet;
 use std::fs;

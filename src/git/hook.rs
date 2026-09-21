@@ -1,11 +1,11 @@
 //! The branch-pin `reference-transaction` hook, installed once per main repo.
 use crate::error::Result;
-use crate::{git, out};
+use crate::{git, term::out};
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
-const HOOK: &str = include_str!("../hooks/branch-pin.sh");
+const HOOK: &str = include_str!("../../hooks/branch-pin.sh");
 /// Marker line identifying our hook, so re-installs overwrite only our own.
 const MARKER: &str = "twig-branch-pin";
 

@@ -1,26 +1,15 @@
-mod add;
 mod cli;
-mod color;
-mod config;
+mod cmd;
 mod error;
 mod git;
-mod hook;
-mod idea;
-mod init;
-mod launcher;
-mod list;
-mod menu;
-mod open;
-mod out;
-mod prune;
-mod remove;
-mod root;
-mod shell;
-mod status;
-mod tint;
+mod ide;
+mod model;
+mod term;
 
 use clap::Parser;
-use cli::{BranchArgs, Cli, Cmd, Color};
+use cli::{BranchArgs, Cli, Cmd};
+use cmd::{add, init, list, open, prune, remove, shell};
+use term::out::{self, Color};
 use error::Result;
 
 fn run(cli: Cli) -> Result<()> {

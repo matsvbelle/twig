@@ -2,10 +2,10 @@
 //! By default "gone" is judged from the last fetch; `-q` asks origin.
 use crate::cli::PruneArgs;
 use crate::error::Result;
-use crate::remove::Remover;
-use crate::root::{name_of, Root, Worktree};
-use crate::status::{Job, Status};
-use crate::{git, list, out};
+use crate::cmd::remove::Remover;
+use crate::model::root::{name_of, Root, Worktree};
+use crate::model::status::{Job, Status};
+use crate::{cmd::list, git, term::out};
 use std::collections::{HashMap, HashSet};
 use std::io::{BufRead, Write};
 use std::path::{Path, PathBuf};

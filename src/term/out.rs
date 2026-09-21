@@ -1,12 +1,21 @@
 //! Progress output. Commands that land you somewhere run in terminal mode:
 //! everything goes to stderr so the shell wrapper captures only the final path
 //! printed with `result()` (nothing at all with `-o`, which opens the IDE).
-use crate::cli::Color;
+use clap::ValueEnum;
 use std::io::IsTerminal;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 
 static TERMINAL: AtomicBool = AtomicBool::new(false);
 static COLOR: AtomicU8 = AtomicU8::new(0);
+
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq)]
+pub enum Color {
+    Auto,
+    Always,
+    Never,
+    #[value(alias = "none", hide = true)]
+    None,
+}
 
 pub fn set_color(mode: Color) {
     COLOR.store(mode as u8, Ordering::Relaxed);

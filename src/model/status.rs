@@ -1,7 +1,7 @@
 //! Per-worktree state shared by `list -l` and `prune`. Everything is read from
 //! the local clone (what the last fetch left behind); only `prune -q` asks origin.
 use crate::git;
-use crate::out;
+use crate::term::out;
 use std::collections::HashSet;
 use std::path::Path;
 

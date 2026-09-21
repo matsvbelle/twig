@@ -1,8 +1,8 @@
 //! Per-branch editor background tint: a solid-colour PNG in `.idea/` plus the
 //! project-scoped `idea.background.editor` property.
-use crate::config::Tint;
+use crate::model::config::Tint;
 use crate::error::Result;
-use crate::{idea, out};
+use crate::{ide::idea, term::out};
 use sha1::{Digest, Sha1};
 use std::fs;
 use std::io::BufWriter;

@@ -2,11 +2,11 @@
 //! `-i`: as a menu to switch from, branch a new worktree off, or remove one).
 use crate::cli::ListArgs;
 use crate::error::Result;
-use crate::menu::{self, Choice, Line, Prompts};
-use crate::remove::Remover;
-use crate::root::Root;
-use crate::status::{Job, Status};
-use crate::{add, bail, git, out};
+use crate::term::menu::{self, Choice, Line, Prompts};
+use crate::cmd::remove::Remover;
+use crate::model::root::Root;
+use crate::model::status::{Job, Status};
+use crate::{bail, cmd::add, git, term::out};
 use std::path::{Path, PathBuf};
 
 /// A listed checkout: a generated worktree, or (with `-r`) a main repo.

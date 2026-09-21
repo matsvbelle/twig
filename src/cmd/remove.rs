@@ -3,8 +3,8 @@
 //! Docker may leave root-owned files), then the parent repo's metadata pruned.
 //! Branches are left intact.
 use crate::error::Result;
-use crate::root::{flatten_branch, name_of, Root, Worktree};
-use crate::{bail, git, launcher, out};
+use crate::model::root::{flatten_branch, name_of, Root, Worktree};
+use crate::{bail, git, ide::launcher, term::out};
 use std::fs;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::os::unix::process::CommandExt;

@@ -1,7 +1,7 @@
 //! The twigged directory: discovered by walking up from the cwd to the nearest
 //! `.twig.toml`. Main repos live (possibly nested) under it; a repo is identified
 //! by its path relative to the root, mirrored under `<worktrees>/<branch>/`.
-use crate::config::{Config, CONFIG_FILE};
+use crate::model::config::{Config, CONFIG_FILE};
 use crate::error::Result;
 use crate::{bail, git};
 use std::fs;
@@ -175,7 +175,7 @@ impl Root {
             if !(cur.is_dir() && fs::remove_dir(cur).is_ok()) {
                 return;
             }
-            crate::out::say(format!("Removed empty {}", cur.display()));
+            crate::term::out::say(format!("Removed empty {}", cur.display()));
             let Some(parent) = cur.parent() else { return };
             cur = parent;
         }

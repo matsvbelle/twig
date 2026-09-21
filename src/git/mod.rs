@@ -1,5 +1,7 @@
 //! Thin wrapper over the `git` CLI. GIT_* variables are always cleared so a
 //! twig invoked from a git alias or hook never inherits another repo's context.
+pub mod hook;
+
 use crate::error::Result;
 use crate::bail;
 use std::path::{Path, PathBuf};
@@ -41,7 +43,7 @@ pub fn ok(cwd: &Path, args: &[&str]) -> bool {
 /// mode git's stdout goes to stderr so only twig's result line reaches stdout.
 pub fn passthrough(cwd: &Path, args: &[&str]) -> Result<()> {
     let mut cmd = command(cwd, args);
-    if crate::out::terminal_mode() {
+    if crate::term::out::terminal_mode() {
         cmd.stdout(Stdio::from(std::io::stderr()));
     }
     let status = cmd.status()?;

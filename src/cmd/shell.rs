@@ -1,10 +1,10 @@
 //! Shell integration: a `twig()` wrapper that cd's on `-x` (a child process can
 //! never change the shell's cwd) plus tab completion fed by `twig __complete`.
 use crate::error::Result;
-use crate::root::{find_config, Root};
-use crate::{bail, git, list, out};
+use crate::model::root::{find_config, Root};
+use crate::{bail, cmd::list, git, term::out};
 
-const ZSH: &str = include_str!("../shell/twig.zsh");
+const ZSH: &str = include_str!("../../shell/twig.zsh");
 
 pub fn run(shell: &str) -> Result<()> {
     match shell {

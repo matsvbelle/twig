@@ -41,20 +41,29 @@ about working on the code.
 ## Layout
 
 ```
-src/main.rs      dispatch            src/root.rs    Root, Worktree, discovery, layout
-src/cli.rs       clap definitions    src/config.rs  .twig.toml schema
-src/init.rs      init + status       src/add.rs     twig <branch>
-src/list.rs      twig list (-r, -i)  src/open.rs    open + exit
-src/menu.rs      arrow-key menu for list -i (raw mode, key decoding, redraw)
-src/remove.rs    remove + detached worker (__bg-remove)
-src/prune.rs     prune (interactive) src/shell.rs   shell snippet + __complete
-src/status.rs    per-worktree dirty/unpushed/never-pushed/gone (list -l, prune)
-src/idea.rs      .idea copy/symlink, workspace.xml component/property editing
-src/tint.rs      branch colour + PNG src/color.rs   ProjectColorInfo palette index
-src/hook.rs      branch-pin hook (hooks/branch-pin.sh embedded)
-src/git.rs, out.rs, error.rs, launcher.rs
-tests/cli.rs     end-to-end tests: temp twigged dir, real git repos + bare origins,
-                 fake `clion` script on PATH logging its argv
+src/main.rs        dispatch only        src/cli.rs   clap definitions
+src/error.rs       Error + bail!
+src/git/mod.rs     git subprocess wrapper (GIT_* cleared, passthrough)
+src/git/hook.rs    branch-pin hook (hooks/branch-pin.sh embedded)
+src/model/         the world commands act on
+  config.rs        .twig.toml schema
+  root.rs          Root, Worktree, discovery, layout, resolve_repo
+  status.rs        per-worktree dirty/unpushed/never-pushed/gone (list -l, prune)
+src/cmd/           one file per subcommand, each exposes run()
+  add.rs           twig <branch>        init.rs      init + status
+  list.rs          list (-r, -i)        open.rs      open + exit
+  remove.rs        remove + detached worker (__bg-remove)
+  prune.rs         prune (interactive)  shell.rs     shell snippet + __complete
+src/ide/           everything JetBrains-specific
+  idea.rs          .idea copy/symlink, workspace.xml component/property editing
+  tint.rs          branch colour + PNG  color.rs     ProjectColorInfo palette index
+  launcher.rs      open_in_ide
+src/term/          terminal I/O
+  out.rs           say, colours, --color gating (Color enum lives here)
+  menu.rs          arrow-key menu for list -i (raw mode, key decoding, redraw)
+tests/cli.rs       end-to-end test crate; one module per command under tests/cli/
+tests/util/        fixture.rs:
+                   temp twigged dir, real git repos + bare origins, fake `clion` on PATH
 ```
 
 ## Testing notes
