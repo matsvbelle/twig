@@ -8,7 +8,7 @@ use std::fs;
 use std::io::BufWriter;
 use std::path::Path;
 
-/// One 8K tile covers any monitor with 'tile' fill, so there are no seams.
+/// 8K covers any monitor with 'plain' fill; 'tile' hits an IDE cache bug that never repaints after a window resize.
 const WIDTH: u32 = 7680;
 const HEIGHT: u32 = 4320;
 pub const IMAGE_NAME: &str = "worktree-bg.png";
@@ -69,7 +69,7 @@ pub fn apply(wt: &Path, branch: &str, tint: &Tint) -> Result<()> {
     fs::create_dir_all(&idea_dir)?;
     let img = idea_dir.join(IMAGE_NAME);
     write_image(&img, branch_color(branch, tint))?;
-    let spec = format!("{},{},tile,top_left,none", img.display(), tint.opacity);
+    let spec = format!("{},{},plain,top_left,none", img.display(), tint.opacity);
     let ws = idea_dir.join("workspace.xml");
     idea::ensure_workspace(&ws)?;
     let xml = fs::read_to_string(&ws)?;
@@ -114,6 +114,6 @@ mod tests {
         apply(tmp.path(), "main", &Tint::default()).unwrap();
         let ws = fs::read_to_string(tmp.path().join(".idea/workspace.xml")).unwrap();
         assert!(ws.contains("idea.background.editor"));
-        assert!(ws.contains(",7,tile,top_left,none"));
+        assert!(ws.contains(",7,plain,top_left,none"));
     }
 }
