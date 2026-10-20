@@ -1,35 +1,14 @@
 //! Progress output. Commands that land you somewhere run in terminal mode:
 //! everything goes to stderr so the shell wrapper captures only the final path
 //! printed with `result()` (nothing at all with `-o`, which opens the IDE).
-use clap::ValueEnum;
 use std::io::IsTerminal;
-use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 static TERMINAL: AtomicBool = AtomicBool::new(false);
-static COLOR: AtomicU8 = AtomicU8::new(0);
 
-#[derive(ValueEnum, Clone, Copy, Debug, PartialEq)]
-pub enum Color {
-    Auto,
-    Always,
-    Never,
-    #[value(alias = "none", hide = true)]
-    None,
-}
-
-pub fn set_color(mode: Color) {
-    COLOR.store(mode as u8, Ordering::Relaxed);
-}
-
-/// `auto` looks at the stream `say` writes to, so wrapper-captured stdout stays plain.
+/// Only on a terminal: looks at the stream `say` writes to, so wrapper-captured stdout stays plain.
 pub fn color_enabled() -> bool {
-    match COLOR.load(Ordering::Relaxed) {
-        x if x == Color::Always as u8 => true,
-        x if x == Color::Auto as u8 => {
-            if terminal_mode() { std::io::stderr().is_terminal() } else { std::io::stdout().is_terminal() }
-        }
-        _ => false,
-    }
+    if terminal_mode() { std::io::stderr().is_terminal() } else { std::io::stdout().is_terminal() }
 }
 
 fn paint(code: &str, s: &str) -> String {

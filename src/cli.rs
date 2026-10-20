@@ -1,5 +1,4 @@
 use clap::{Args, Parser, Subcommand};
-use crate::term::out::Color;
 
 /// One worktree per branch, one IDE window per worktree.
 #[derive(Parser, Debug)]
@@ -20,10 +19,6 @@ pub struct Globals {
     /// Open in the IDE instead of cd-ing (no command or branch: open the current checkout)
     #[arg(short = 'o', long, global = true)]
     pub open: bool,
-
-    /// Colour output: auto (when writing to a terminal), always, never/none
-    #[arg(long, global = true, value_name = "WHEN")]
-    pub color: Option<Color>,
 }
 
 /// `twig <branch> [base]`: the words clap handed us as an unknown command, re-parsed.

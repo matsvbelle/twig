@@ -59,8 +59,7 @@ Every command that targets a directory `cd`s there by default (via the shell
 wrapper); `-o` / `--open` opens it in the configured IDE instead. `twig -o` on
 its own opens the checkout you're in (worktree or main repo).
 
-Output is coloured when written to a terminal; `--color=always|never` overrides.
-Like `-o`, it may go before or after the command.
+Output is coloured when written to a terminal.
 
 | Command | |
 |---|---|

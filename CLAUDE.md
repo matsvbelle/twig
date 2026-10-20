@@ -26,9 +26,9 @@ about working on the code.
 - **No network unless asked.** `list -l`/`prune` judge "gone" from the local
   `[gone]` tracking state; only `prune -q` runs `ls-remote`. Status probes run
   in parallel (`Status::probe_all`) and never recurse into submodules.
-- **Colour goes through `out::{green,yellow,red,bold,dim,cyan}`**, gated by
-  `--color` (global clap arg, `out::set_color`); `auto` checks isatty of the
-  stream `say` writes to, so wrapper-captured output stays plain.
+- **Colour goes through `out::{green,yellow,red,bold,dim,cyan}`**, on only when
+  the stream `say` writes to is a terminal (`out::color_enabled`), so
+  wrapper-captured output stays plain. There is no option to force it.
 - **GIT_* env is always cleared** (`git::command`) so twig behaves the same
   whether run from a shell, a git alias, or a hook.
 - **Repo identity = path relative to the root** (`Root::repo_name`), mirrored
@@ -61,7 +61,7 @@ src/ide/           everything JetBrains-specific
   tint.rs          branch colour + PNG  color.rs     ProjectColorInfo palette index
   launcher.rs      open_in_ide
 src/term/          terminal I/O
-  out.rs           say, colours, --color gating (Color enum lives here)
+  out.rs           say, colours (only on a terminal)
   menu.rs          arrow-key menu for list -i (raw mode, key decoding, redraw)
 tests/cli.rs       end-to-end test crate; one module per command under tests/cli/
 tests/util/        fixture.rs:

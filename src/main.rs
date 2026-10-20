@@ -9,7 +9,6 @@ mod term;
 use clap::Parser;
 use cli::{BranchArgs, Cli, Cmd};
 use cmd::{add, init, list, open, prune, remove, shell};
-use term::out::{self, Color};
 use error::Result;
 
 fn run(cli: Cli) -> Result<()> {
@@ -22,12 +21,10 @@ fn run(cli: Cli) -> Result<()> {
         Some(Cmd::Branch(words)) => {
             let args = BranchArgs::try_parse_from(std::iter::once("twig".to_string()).chain(words)).unwrap_or_else(|e| e.exit());
             g.open |= args.globals.open;
-            g.color = args.globals.color.or(g.color);
             Some(Cmd::Branch(vec![args.branch].into_iter().chain(args.base).collect()))
         }
         cmd => cmd,
     };
-    out::set_color(g.color.unwrap_or(Color::Auto));
     match cmd {
         None if g.open => open::current(),
         None => {

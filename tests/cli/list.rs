@@ -26,11 +26,8 @@ fn list_marks_current_and_long_status() {
     assert!(!clean_line.contains("dirty") && !clean_line.contains("pushed") && !clean_line.contains("gone"), "{long}");
     assert!(!long.contains("Querying"), "{long}");
 
-    // Colour: auto is off when piped; always/never override; the flag goes after the subcommand.
+    // Colour only on a terminal, so none when piped.
     assert!(!plain.contains("\x1b["));
-    assert!(f.ok(&work, &["list", "--color=always"]).contains("\x1b[92m← here\x1b[0m"));
-    assert!(!f.ok(&work, &["list", "--color=never"]).contains("\x1b["));
-    assert!(!f.ok(&work, &["list", "--color=none"]).contains("\x1b["));
 }
 
 #[test]
