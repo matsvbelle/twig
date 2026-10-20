@@ -40,7 +40,7 @@ impl Fixture {
         fs::write(repo.join("README"), name).unwrap();
         git(&repo, &["add", "."]);
         git(&repo, &["commit", "-qm", "init"]);
-        git(origin.parent().unwrap(), &["init", "-q", "--bare", origin.to_str().unwrap()]);
+        git(origin.parent().unwrap(), &["init", "-q", "--bare", "-b", "main", origin.to_str().unwrap()]);
         git(&repo, &["remote", "add", "origin", origin.to_str().unwrap()]);
         git(&repo, &["push", "-q", "-u", "origin", "main"]);
         repo
