@@ -18,6 +18,12 @@ impl From<std::io::Error> for Error {
     }
 }
 
+impl From<self_update::errors::Error> for Error {
+    fn from(e: self_update::errors::Error) -> Self {
+        Error(e.to_string())
+    }
+}
+
 impl From<String> for Error {
     fn from(s: String) -> Self {
         Error(s)

@@ -8,7 +8,7 @@ about working on the code.
 
 - **No runtime dependencies.** Only `git`, `cp`, `sudo` (last resort) and the
   configured IDE launcher are shelled out to. Image generation is in-process (`png`
-  crate). Never add a python/shell helper.
+  crate), so is self-update (`self_update`). Never add a python/shell helper.
 - **Activation = `.twig.toml`.** `root::Root::discover()` walks up from the cwd;
   nothing else (no env vars, no global config, no git aliases) decides the root.
   All tunables live in that file and are set via `twig init` options.
@@ -24,7 +24,8 @@ about working on the code.
   TIOCGWINSZ), never `stty`. The menu is drawn on stderr and erased again; when
   stdin isn't a tty keys are read as plain bytes, which is how the e2e tests script it.
 - **No network unless asked.** `list -l`/`prune` judge "gone" from the local
-  `[gone]` tracking state; only `prune -q` runs `ls-remote`. Status probes run
+  `[gone]` tracking state; only `prune -q` runs `ls-remote`, only `update` calls
+  the GitHub API (no background update check). Status probes run
   in parallel (`Status::probe_all`) and never recurse into submodules.
 - **Colour goes through `out::{green,yellow,red,bold,dim,cyan}`**, on only when
   the stream `say` writes to is a terminal (`out::color_enabled`), so
@@ -56,6 +57,7 @@ src/cmd/           one file per subcommand, each exposes run()
   list.rs          list (-r, -i)        open.rs      open + exit
   remove.rs        remove + detached worker (__bg-remove)
   prune.rs         prune (interactive)  shell.rs     shell snippet + __complete
+  update.rs        update from GitHub releases (sudo install when not writable)
 src/ide/           everything JetBrains-specific
   idea.rs          .idea copy/symlink, workspace.xml component/property editing
   tint.rs          branch colour + PNG  color.rs     ProjectColorInfo palette index
@@ -81,4 +83,6 @@ tests/util/        fixture.rs:
 
 `scripts/build.sh` → `target/release/twig`; `scripts/install.sh` builds, copies
 the binary to `/usr/local/bin/twig` and adds `eval "$(twig shell zsh)"` to
-`$ZDOTDIR/.zshrc` once.
+`$ZDOTDIR/.zshrc` once. A `vX.Y.Z` tag (matching `Cargo.toml`) triggers
+`.github/workflows/release.yml`, which publishes the static musl build that
+`twig update` installs (`update::TARGET`).

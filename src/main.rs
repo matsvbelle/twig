@@ -8,7 +8,7 @@ mod term;
 
 use clap::Parser;
 use cli::{BranchArgs, Cli, Cmd};
-use cmd::{add, init, list, open, prune, remove, shell};
+use cmd::{add, init, list, open, prune, remove, shell, update};
 use error::Result;
 
 fn run(cli: Cli) -> Result<()> {
@@ -39,6 +39,7 @@ fn run(cli: Cli) -> Result<()> {
         Some(Cmd::Exit {}) => open::exit(g.open),
         Some(Cmd::Remove { target, repo, list, force }) => remove::run(target.as_deref(), repo.as_deref(), list, force, g.open),
         Some(Cmd::Prune(args)) => prune::run(args, g.open),
+        Some(Cmd::Update { check }) => update::run(check),
         Some(Cmd::Shell { shell }) => shell::run(&shell),
         Some(Cmd::Complete { kind }) => shell::complete(&kind),
         Some(Cmd::BgRemove { worktree, branch_dir, main, force }) => remove::bg_remove(&worktree, &branch_dir, &main, force),

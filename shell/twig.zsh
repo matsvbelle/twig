@@ -7,7 +7,7 @@ twig () {
   # binary opens the IDE instead and prints nothing on stdout.
   case "$1" in
     list) __twig_list_switches "$@" || { TWIG_SHELL=1 command twig "$@"; return } ;;
-    init|status|shell|help|__complete|-h|--help|-V|--version|"")
+    init|status|update|shell|help|__complete|-h|--help|-V|--version|"")
       TWIG_SHELL=1 command twig "$@"; return ;;
   esac
   local a; for a in "$@"; do
@@ -45,6 +45,7 @@ _twig () {
     'exit:cd into the main repo (-o: open it in the IDE)'
     'remove:remove a worktree'
     'prune:remove worktrees whose branch is gone from origin'
+    'update:install the latest release from GitHub (-c: only check)'
   )
   # Global flags may precede the command; skip them so words[2] is the command.
   while (( CURRENT > 2 )) && [[ $words[2] == (-o|--open) ]]; do
@@ -72,6 +73,7 @@ _twig () {
     prune)  _arguments '(-A --all)'{-A,--all}'[every repo]' '(-R --skip-local)'{-R,--skip-local}'[skip never-pushed]' \
               '(-C --skip-dirty)'{-C,--skip-dirty}'[skip dirty / unpushed]' '(-q --query)'{-q,--query}'[ask origin instead of trusting the last fetch]' \
               '(-f --force)'{-f,--force}'[delete the branch even with unpushed commits]' '(-o --open)'{-o,--open}'[open the main repo in the IDE]' ;;
+    update) _arguments '(-c --check)'{-c,--check}'[only report whether a newer release exists]' ;;
     status) ;;
     *) __twig_items branches branches 'base ref' ;;
   esac

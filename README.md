@@ -33,13 +33,25 @@ directories can coexist; they cannot be nested.
 
 ## Install (once)
 
+From the latest release (Linux x86_64, static binary):
+
+```sh
+curl -fsSL https://github.com/matsvbelle/twig/releases/latest/download/twig-x86_64-unknown-linux-musl.tar.gz \
+  | sudo tar -xz -C /usr/local/bin twig
+echo 'eval "$(twig shell zsh)"' >> "${ZDOTDIR:-$HOME}/.zshrc"   # cd support, tab completion
+```
+
+Or from source:
+
 ```sh
 ./scripts/install.sh    # builds release, copies to /usr/local/bin/twig,
                         # adds one line to ~/.zshrc:
                         #   eval "$(twig shell zsh)"   (cd support, tab completion)
 ```
 
-Open a new shell afterwards. Then, per directory of repos:
+Open a new shell afterwards. `twig update` replaces the binary with the latest
+release (via `sudo install` when its folder isn't writable); `twig update -c`
+only reports whether there is one. Then, per directory of repos:
 
 ```sh
 cd ~/Projects
@@ -71,6 +83,7 @@ Output is coloured when written to a terminal.
 | `twig prune [-A] [-R] [-C] [-q] [-f] [-o]` | interactive: worktrees whose branch is gone from origin, or never pushed (`-R` skips those, `-C` skips dirty/unpushed) |
 | `twig open [name] [-o]` | cd to a repo under the root; no name lists repos |
 | `twig status` | active for which dir, how many repos/worktrees, ide and tint settings |
+| `twig update [-c]` | install the latest GitHub release (`-c`: only check); works outside a twigged directory |
 
 A branch named like a subcommand: `twig -- list`.
 
@@ -117,3 +130,11 @@ as-is after `twig init`; nothing needs to be re-created.
 cargo test          # unit tests + end-to-end tests on temp git repos (fake `clion` on PATH)
 cargo clippy --all-targets
 ```
+
+Releasing: bump `version` in `Cargo.toml`, commit, then `git tag vX.Y.Z && git
+push origin vX.Y.Z`. The `release` workflow checks the tag matches, runs the
+tests and publishes `twig-x86_64-unknown-linux-musl.tar.gz` as a GitHub release.
+
+## License
+
+MIT, see [LICENSE](LICENSE).

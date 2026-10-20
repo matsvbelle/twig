@@ -16,7 +16,7 @@ fn open_current_checkout_and_help_everywhere() {
     assert!(f.wait_clion(&format!("{}\n", a.display())));
     assert!(f.fail(&f.root, &["-o"]).contains("Not inside a git repo"));
 
-    for (cmd, flag) in [("list", "--long"), ("open", "--open"), ("exit", "--open"), ("remove", "--list"), ("prune", "--query"), ("init", "--ide"), ("status", "--open")] {
+    for (cmd, flag) in [("list", "--long"), ("open", "--open"), ("exit", "--open"), ("remove", "--list"), ("prune", "--query"), ("init", "--ide"), ("status", "--open"), ("update", "--check")] {
         let help = f.ok(&f.root, &[cmd, "--help"]);
         assert!(help.contains("Usage: twig ") && help.contains(flag), "{cmd}: {help}");
         assert_eq!(f.ok(&f.root, &["-o", cmd, "--help"]), help, "-o before {cmd}");

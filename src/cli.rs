@@ -62,6 +62,12 @@ pub enum Cmd {
     },
     /// Interactively remove worktrees whose branch is gone from origin (as last fetched; -q asks origin)
     Prune(PruneArgs),
+    /// Install the latest release from GitHub (-c: only check)
+    Update {
+        /// Only report whether a newer release exists
+        #[arg(short = 'c', long)]
+        check: bool,
+    },
     /// Print the zsh integration (cd + completion); `eval "$(twig shell zsh)"`
     #[command(hide = true)]
     Shell { shell: String },
