@@ -65,11 +65,11 @@ Like `-o`, it may go before or after the command.
 | Command | |
 |---|---|
 | `twig <branch> [base] [-o]` | create the worktree (local branch → checkout; on origin → tracking; else new from `base`, default HEAD) and cd into it; if it exists, just go there |
-| `twig list [-A] [-l] [-r] [-i] [-o]` | tree of this repo's worktrees, the current one marked (`-A`: all repos; `-l`: dirty / unpushed / never pushed / upstream gone; `-r`: the main repos too, with the worktrees folder nested below them; `-i`: menu — ↑/↓ move, Enter/Space cd's into the highlighted checkout (`-o`: opens it), `n` creates a worktree branched from it, `r`/`d`/Del removes it after confirming, `q`/Esc quits) |
+| `twig list [-A] [-l] [-r] [-i] [-f] [-o]` | tree of this repo's worktrees, the current one marked (`-A`: all repos; `-l`: dirty / unpushed / never pushed / upstream gone; `-r`: the main repos too, with the worktrees folder nested below them; `-i`: menu — ↑/↓ move, Enter/Space cd's into the highlighted checkout (`-o`: opens it), `n` creates a worktree branched from it, `r`/`d`/Del removes it after confirming (`-f`: force-delete its branch), `q`/Esc quits) |
 | `twig exit [-o]` | cd to the main repo |
-| `twig remove [-o]` | remove the worktree you're in and land in its main repo (`-o`: detached; the IDE switches to main) |
-| `twig remove <path>` / `<branch> [repo]` / `-l` | remove others / list |
-| `twig prune [-A] [-R] [-C] [-q] [-o]` | interactive: worktrees whose branch is gone from origin, or never pushed (`-R` skips those, `-C` skips dirty/unpushed) |
+| `twig remove [-f] [-o]` | remove the worktree you're in and land in its main repo (`-o`: detached; the IDE switches to main) |
+| `twig remove <path>` / `<branch> [repo]` / `-l` | remove others / list (`-f` applies here too) |
+| `twig prune [-A] [-R] [-C] [-q] [-f] [-o]` | interactive: worktrees whose branch is gone from origin, or never pushed (`-R` skips those, `-C` skips dirty/unpushed) |
 | `twig open [name] [-o]` | cd to a repo under the root; no name lists repos |
 | `twig status` | active for which dir, how many repos/worktrees, ide and tint settings |
 
@@ -92,7 +92,9 @@ branch (override once: `WORKTREE_ALLOW_SWITCH=1 git switch …`).
 `remove`/`prune` delete the directory directly (submodule worktrees can't be
 dropped by `git worktree remove`; Docker may leave root-owned files → sudo only
 then), wait for the IDE to stop recreating `.idea`, then `git worktree prune`.
-Branches are kept.
+The worktree's local branch is deleted too when every commit on it is on a
+remote-tracking ref (nothing is lost; no network involved), otherwise it is kept
+with a note; `-f` deletes it regardless. Remote branches are never touched.
 
 ## `.twig.toml`
 

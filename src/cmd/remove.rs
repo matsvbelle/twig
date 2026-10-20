@@ -1,7 +1,7 @@
 //! `twig remove`: delete generated worktrees. The directory is removed directly
 //! (worktrees with submodules can't be dropped by `git worktree remove`, and
 //! Docker may leave root-owned files), then the parent repo's metadata pruned.
-//! Branches are left intact.
+//! The local branch goes too once all its commits are on a remote (or with -f), never a remote one.
 use crate::error::Result;
 use crate::model::root::{flatten_branch, name_of, Root, Worktree};
 use crate::{bail, git, ide::launcher, term::out};
@@ -16,13 +16,13 @@ extern "C" {
     fn geteuid() -> u32;
 }
 
-pub fn run(target: Option<&str>, repo: Option<&str>, list: bool, open: bool) -> Result<()> {
+pub fn run(target: Option<&str>, repo: Option<&str>, list: bool, force: bool, open: bool) -> Result<()> {
     out::set_terminal_mode();
     let root = Root::discover()?;
     if list {
         return list_worktrees(&root);
     }
-    let remover = Remover::new(root, open);
+    let remover = Remover::new(root, open, force);
     let Some(arg) = target else {
         let Some(top) = remover.current_top.clone() else {
             bail!("Not inside a git worktree. Pass a <path>/<branch>, or use --list.");
@@ -75,12 +75,14 @@ pub struct Remover {
     /// When the current worktree is removed: open the main repo in the IDE
     /// (detached) instead of handing its path to the shell wrapper.
     pub open_main: bool,
+    /// Delete each removed worktree's local branch even when it has commits on no remote.
+    pub force: bool,
 }
 
 impl Remover {
-    pub fn new(root: Root, open_main: bool) -> Remover {
+    pub fn new(root: Root, open_main: bool, force: bool) -> Remover {
         let current_top = std::env::current_dir().ok().and_then(|d| git::toplevel(&d));
-        Remover { root, current_top, open_main }
+        Remover { root, current_top, open_main, force }
     }
 
     fn is_current(&self, path: &Path) -> bool {
@@ -116,14 +118,14 @@ impl Remover {
             let _ = std::env::set_current_dir(&self.root.dir);
             let main = worktree_at(path).parent().unwrap_or_default();
             if self.open_main {
-                return detached_remove(path, &branch_dir, &main).is_ok();
+                return detached_remove(path, &branch_dir, &main, self.force).is_ok();
             }
-            let ok = remove_worktree(&self.root, path);
+            let ok = remove_worktree(&self.root, path, self.force);
             self.root.cleanup_empty_dirs(&branch_dir);
             out::result(&main);
             return ok;
         }
-        let ok = remove_worktree(&self.root, path);
+        let ok = remove_worktree(&self.root, path, self.force);
         self.root.cleanup_empty_dirs(&branch_dir);
         ok
     }
@@ -133,8 +135,8 @@ fn worktree_at(path: &Path) -> Worktree {
     Worktree { path: path.to_path_buf(), branch_dir: String::new(), repo: name_of(path) }
 }
 
-/// Delete one generated worktree directory and prune its parent's metadata.
-pub fn remove_worktree(root: &Root, wt: &Path) -> bool {
+/// Delete one generated worktree directory, prune its parent's metadata, then drop its local branch.
+pub fn remove_worktree(root: &Root, wt: &Path, force: bool) -> bool {
     if !root.is_generated(wt) {
         out::warn(format!("Refusing to remove '{}' (not a generated worktree).", wt.display()));
         return false;
@@ -144,6 +146,7 @@ pub fn remove_worktree(root: &Root, wt: &Path) -> bool {
         return false;
     }
     let parent = worktree_at(wt).parent();
+    let branch = worktree_at(wt).branch();
     out::say(format!("Removing worktree: {}", wt.display()));
 
     // Rename aside FIRST (atomic): frees the path instantly even if the IDE holds
@@ -180,8 +183,26 @@ pub fn remove_worktree(root: &Root, wt: &Path) -> bool {
         if git::ok(&parent, &["worktree", "prune"]) {
             out::say(format!("  Pruned worktree metadata in {}", name_of(&parent)));
         }
+        if let Some(branch) = branch {
+            delete_branch(&parent, &branch, force);
+        }
     }
     true
+}
+
+/// Local only, and without `force` only when nothing is lost: every commit is on a remote-tracking ref.
+fn delete_branch(main: &Path, branch: &str, force: bool) {
+    let refname = format!("refs/heads/{branch}");
+    let on_remote = git::run(main, &["for-each-ref", "--count=1", "--contains", &refname, "refs/remotes"])
+        .is_ok_and(|r| !r.is_empty());
+    if !force && !on_remote {
+        out::say(format!("  Kept branch '{branch}' (commits on no remote; -f deletes it)"));
+        return;
+    }
+    match git::run(main, &["branch", "-D", branch]) {
+        Ok(_) => out::say(format!("  Deleted local branch '{branch}'")),
+        Err(e) => out::warn(format!("  (branch '{branch}' kept: {e})")),
+    }
 }
 
 /// `rm -rf`, escalating to sudo only when foreign-owned (Docker root) files remain.
@@ -232,12 +253,13 @@ fn make_writable(path: &Path) {
 
 /// Spawn `twig __bg-remove` in its own process group so it survives this
 /// terminal closing (the IDE switching projects may close the worktree's terminal).
-fn detached_remove(wt: &Path, branch_dir: &Path, main: &Path) -> Result<()> {
+fn detached_remove(wt: &Path, branch_dir: &Path, main: &Path, force: bool) -> Result<()> {
     let log = std::env::temp_dir().join(format!("twig-remove-{}.log", std::process::id()));
     let logfile = fs::File::create(&log)?;
     Command::new(std::env::current_exe()?)
         .arg("__bg-remove")
         .args([wt, branch_dir, main])
+        .args(force.then_some("--force"))
         .current_dir(wt.ancestors().nth(2).unwrap_or(Path::new("/")))
         .stdin(Stdio::null())
         .stdout(Stdio::from(logfile.try_clone()?))
@@ -250,7 +272,7 @@ fn detached_remove(wt: &Path, branch_dir: &Path, main: &Path) -> Result<()> {
 }
 
 /// The detached worker: switch the IDE to main, let it settle, then remove.
-pub fn bg_remove(worktree: &str, branch_dir: &str, main: &str) -> Result<()> {
+pub fn bg_remove(worktree: &str, branch_dir: &str, main: &str, force: bool) -> Result<()> {
     let wt = Path::new(worktree);
     let root = Root::discover_from(wt)?;
     if !main.is_empty() {
@@ -259,7 +281,7 @@ pub fn bg_remove(worktree: &str, branch_dir: &str, main: &str) -> Result<()> {
     }
     // Give the IDE time to close/deactivate the worktree project.
     std::thread::sleep(Duration::from_secs(3));
-    remove_worktree(&root, wt);
+    remove_worktree(&root, wt, force);
     root.cleanup_empty_dirs(Path::new(branch_dir));
     Ok(())
 }

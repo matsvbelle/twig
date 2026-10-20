@@ -40,11 +40,11 @@ fn run(cli: Cli) -> Result<()> {
         Some(Cmd::List(args)) => list::run(args, g.open),
         Some(Cmd::Open { name }) => open::run(name.as_deref(), g.open),
         Some(Cmd::Exit {}) => open::exit(g.open),
-        Some(Cmd::Remove { target, repo, list }) => remove::run(target.as_deref(), repo.as_deref(), list, g.open),
+        Some(Cmd::Remove { target, repo, list, force }) => remove::run(target.as_deref(), repo.as_deref(), list, force, g.open),
         Some(Cmd::Prune(args)) => prune::run(args, g.open),
         Some(Cmd::Shell { shell }) => shell::run(&shell),
         Some(Cmd::Complete { kind }) => shell::complete(&kind),
-        Some(Cmd::BgRemove { worktree, branch_dir, main }) => remove::bg_remove(&worktree, &branch_dir, &main),
+        Some(Cmd::BgRemove { worktree, branch_dir, main, force }) => remove::bg_remove(&worktree, &branch_dir, &main, force),
     }
 }
 

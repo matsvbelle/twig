@@ -25,7 +25,7 @@ pub fn run(args: PruneArgs, open: bool) -> Result<()> {
         out::say(format!("No worktrees under {}", root.worktrees_dir().display()));
         return Ok(());
     }
-    let remover = Remover::new(root.clone(), open);
+    let remover = Remover::new(root.clone(), open, args.force);
 
     let mut remote_heads: HashMap<PathBuf, Option<HashSet<String>>> = HashMap::new();
     let mut pending: Vec<(Worktree, String, PathBuf)> = Vec::new();

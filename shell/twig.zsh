@@ -65,14 +65,15 @@ _twig () {
     init)   _arguments '--ide=[IDE launcher command]' '--no-tint[no editor background tint]' '--opacity=[tint opacity %]' '--saturation=[0..1]' '--lightness=[0..1]' ':worktrees folder name:' ;;
     list)   _arguments $color '(-A --all)'{-A,--all}'[every repo under the twigged directory]' '(-l --long)'{-l,--long}'[show dirty / unpushed / never pushed / gone]' \
               '(-r --root-repos)'{-r,--root-repos}'[also list the main repos]' '(-i --interactive-switch)'{-i,--interactive-switch}'[menu: arrows move, Enter switches, n new worktree, r/d/Del remove]' \
-              '(-o --open)'{-o,--open}'[with -i: open the chosen checkout in the IDE]' ;;
+              '(-f --force)'{-f,--force}'[with -i: delete the branch even with unpushed commits]' '(-o --open)'{-o,--open}'[with -i: open the chosen checkout in the IDE]' ;;
     open)   _arguments $color '(-o --open)'{-o,--open}'[open in the IDE instead of cd-ing]' '1:repo:{__twig_items repos repos repo}' ;;
     exit)   _arguments $color '(-o --open)'{-o,--open}'[open in the IDE instead of cd-ing]' ;;
     remove) _arguments $color '(- *)'{-l,--list}'[list all generated worktrees]' '(-o --open)'{-o,--open}'[open the main repo in the IDE]' \
+              '(-f --force)'{-f,--force}'[delete the branch even with unpushed commits]' \
               '1:worktree:{__twig_items all-worktrees worktrees worktree}' '2:repo:{__twig_items repos repos repo}' ;;
     prune)  _arguments $color '(-A --all)'{-A,--all}'[every repo]' '(-R --skip-local)'{-R,--skip-local}'[skip never-pushed]' \
               '(-C --skip-dirty)'{-C,--skip-dirty}'[skip dirty / unpushed]' '(-q --query)'{-q,--query}'[ask origin instead of trusting the last fetch]' \
-              '(-o --open)'{-o,--open}'[open the main repo in the IDE]' ;;
+              '(-f --force)'{-f,--force}'[delete the branch even with unpushed commits]' '(-o --open)'{-o,--open}'[open the main repo in the IDE]' ;;
     status) ;;
     *) __twig_items branches branches 'base ref' ;;
   esac

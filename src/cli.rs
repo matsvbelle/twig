@@ -61,6 +61,9 @@ pub enum Cmd {
         /// List all generated worktrees
         #[arg(short = 'l', long)]
         list: bool,
+    /// Delete the local branch even when it has commits on no remote (default: only when it has none)
+        #[arg(short = 'f', long)]
+        force: bool,
     },
     /// Interactively remove worktrees whose branch is gone from origin (as last fetched; -q asks origin)
     Prune(PruneArgs),
@@ -75,7 +78,13 @@ pub enum Cmd {
     Complete { kind: String },
     /// Detached removal worker spawned by `remove` (never call directly)
     #[command(name = "__bg-remove", hide = true)]
-    BgRemove { worktree: String, branch_dir: String, main: String },
+    BgRemove {
+        worktree: String,
+        branch_dir: String,
+        main: String,
+        #[arg(long)]
+        force: bool,
+    },
 }
 
 #[derive(Args, Debug)]
@@ -114,6 +123,9 @@ pub struct ListArgs {
     /// Menu: arrows move, Enter/Space cd's into the highlighted checkout (-o: opens it), n creates a worktree from it, r/d/Del removes it, q/Esc quits
     #[arg(short = 'i', long)]
     pub interactive_switch: bool,
+    /// With -i: delete a removed worktree's local branch even when it has commits on no remote
+    #[arg(short = 'f', long)]
+    pub force: bool,
 }
 
 #[derive(Args, Debug)]
@@ -130,4 +142,7 @@ pub struct PruneArgs {
     /// Ask origin (git ls-remote) instead of trusting the last fetch
     #[arg(short = 'q', long)]
     pub query: bool,
+    /// Delete the local branch even when it has commits on no remote (default: only when it has none)
+    #[arg(short = 'f', long)]
+    pub force: bool,
 }

@@ -36,6 +36,8 @@ about working on the code.
   depth limit, stops at a `.git`, skips hidden dirs and the worktrees folder. Name lookup is
   `Root::resolve_repo` (top-level exact → path → unique basename → substring).
 - **Only ever delete below `<worktrees>/<branch>/`** (`Root::is_generated`).
+  A removed worktree's local branch goes only when all its commits are on a
+  remote-tracking ref, or with `-f` (`remove::delete_branch`); never a remote branch.
 - Comments: one line, rationale/constraints only.
 
 ## Layout

@@ -94,7 +94,7 @@ pub fn run(args: ListArgs, open: bool) -> Result<()> {
             }
             Choice::Remove(i) => {
                 let e = &entries[i];
-                Remover::new(root.clone(), open).remove_all(std::slice::from_ref(&e.path))?;
+                Remover::new(root.clone(), open, args.force).remove_all(std::slice::from_ref(&e.path))?;
                 if e.row.current {
                     return Ok(());
                 }

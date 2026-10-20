@@ -76,3 +76,63 @@ fn remove_current_worktree_is_detached_and_prune_flow() {
     assert!(f.wait_clion(repo.to_str().unwrap()));
     assert!(!git(&repo, &["worktree", "list"]).contains("kept"));
 }
+
+fn commit(dir: &std::path::Path, file: &str) {
+    fs::write(dir.join(file), file).unwrap();
+    git(dir, &["add", file]);
+    git(dir, &["commit", "-qm", file]);
+}
+
+#[test]
+fn remove_deletes_local_branch_only_when_safe() {
+    let f = Fixture::new();
+    let a = f.repo("a");
+    f.init();
+    let has_branch = |b: &str| !git(&a, &["branch", "--list", b]).is_empty();
+
+    // No commits of its own, or all pushed: the local branch goes, the remote one stays.
+    f.ok(&a, &["fresh"]);
+    f.ok(&f.root, &["remove", "fresh"]);
+    assert!(!has_branch("fresh"));
+    f.ok(&a, &["pushed"]);
+    commit(&f.wt("pushed", "a"), "p");
+    git(&f.wt("pushed", "a"), &["push", "-q", "-u", "origin", "pushed"]);
+    let out = f.ok(&f.root, &["remove", "pushed"]);
+    assert!(out.contains("Deleted local branch 'pushed'") && !has_branch("pushed"), "{out}");
+    assert!(!git(&a, &["ls-remote", "origin", "pushed"]).is_empty());
+
+    // Unpushed commits: kept, unless -f.
+    f.ok(&a, &["local"]);
+    commit(&f.wt("local", "a"), "l");
+    let out = f.ok(&f.root, &["remove", "local"]);
+    assert!(out.contains("Kept branch 'local'") && has_branch("local"), "{out}");
+    f.ok(&a, &["local"]);
+    f.ok(&f.root, &["remove", "-f", "local"]);
+    assert!(!has_branch("local"));
+}
+
+#[test]
+fn prune_and_list_pass_force_on() {
+    let f = Fixture::new();
+    let a = f.repo("a");
+    f.init();
+    let has_branch = |b: &str| !git(&a, &["branch", "--list", b]).is_empty();
+    let gone_with_commit = |b: &str| {
+        f.ok(&a, &[b]);
+        commit(&f.wt(b, "a"), b);
+        git(&f.wt(b, "a"), &["push", "-q", "-u", "origin", b]);
+        git(&a, &["push", "-q", "origin", "--delete", b]);
+    };
+
+    gone_with_commit("g1");
+    let (ok, _, err) = f.interactive(&a, &["prune"], "\ny\n");
+    assert!(ok && err.contains("Kept branch 'g1'") && has_branch("g1"), "{err}");
+    gone_with_commit("g2");
+    let (ok, _, err) = f.interactive(&a, &["prune", "-f"], "\ny\n");
+    assert!(ok && !f.wt("g2", "a").exists() && !has_branch("g2"), "{err}");
+
+    f.ok(&a, &["menu"]);
+    commit(&f.wt("menu", "a"), "m");
+    let (ok, _, err) = f.interactive(&a, &["list", "-i", "-f"], "ry");
+    assert!(ok && !f.wt("menu", "a").exists() && !has_branch("menu"), "{err}");
+}

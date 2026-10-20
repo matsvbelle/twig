@@ -76,8 +76,8 @@ fn add_list_exit_remove_flow() {
     f.ok(&f.root, &["remove", "other"]);
     assert!(!f.root.join(".WORKTREES/other").exists());
     assert!(f.ok(&f.root, &["remove", "-l"]).contains("feature-x/alpha"));
-    // Branch survives removal.
-    assert!(git(&repo, &["branch", "--list", "other"]).contains("other"));
+    // A branch with no commits of its own goes with its worktree.
+    assert!(git(&repo, &["branch", "--list", "other"]).is_empty());
 }
 
 #[test]
